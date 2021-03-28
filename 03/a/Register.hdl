@@ -1,0 +1,45 @@
+// This file is part of www.nand2tetris.org
+// and the book "The Elements of Computing Systems"
+// by Nisan and Schocken, MIT Press.
+// File name: projects/03/a/Register.hdl
+
+/**
+ * 16-bit register:
+ * If load[t] == 1 then out[t+1] = in[t]
+ * else out does not change
+ */
+
+CHIP Register {
+    IN in[16], load;
+    OUT out[16];
+
+    PARTS:
+    /** a register consists of 16 BIT components wired together */
+    /** to save components we use 1 single MUX16 and split its output bits */
+    /** still need 16 different DFF to store each individual bit */
+    Mux16(a[0]=dffOut0, a[1]=dffOut1, a[2]=dffOut2, a[3]=dffOut3, 
+          a[4]=dffOut4, a[5]=dffOut5, a[6]=dffOut6, a[7]=dffOut7, 
+          a[8]=dffOut8, a[9]=dffOut9, a[10]=dffOut10, a[11]=dffOut11, 
+          a[12]=dffOut12, a[13]=dffOut13, a[14]=dffOut14, a[15]=dffOut15, 
+          b=in, sel=load, 
+          out[0]=muxOut0, out[1]=muxOut1, out[2]=muxOut2, out[3]=muxOut3,
+          out[4]=muxOut4, out[5]=muxOut5, out[6]=muxOut6, out[7]=muxOut7,
+          out[8]=muxOut8, out[9]=muxOut9, out[10]=muxOut10, out[11]=muxOut11,
+          out[12]=muxOut12, out[13]=muxOut13, out[14]=muxOut14, out[15]=muxOut15);
+    DFF(in=muxOut0, out=out[0], out=dffOut0);
+    DFF(in=muxOut1, out=out[1], out=dffOut1);
+    DFF(in=muxOut2, out=out[2], out=dffOut2);
+    DFF(in=muxOut3, out=out[3], out=dffOut3);
+    DFF(in=muxOut4, out=out[4], out=dffOut4);
+    DFF(in=muxOut5, out=out[5], out=dffOut5);
+    DFF(in=muxOut6, out=out[6], out=dffOut6);
+    DFF(in=muxOut7, out=out[7], out=dffOut7);
+    DFF(in=muxOut8, out=out[8], out=dffOut8);
+    DFF(in=muxOut9, out=out[9], out=dffOut9);
+    DFF(in=muxOut10, out=out[10], out=dffOut10);
+    DFF(in=muxOut11, out=out[11], out=dffOut11);
+    DFF(in=muxOut12, out=out[12], out=dffOut12);
+    DFF(in=muxOut13, out=out[13], out=dffOut13);
+    DFF(in=muxOut14, out=out[14], out=dffOut14);
+    DFF(in=muxOut15, out=out[15], out=dffOut15);
+}
