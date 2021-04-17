@@ -1,12 +1,11 @@
 use std::path::PathBuf;
+use structopt::StructOpt;
 
 use code_generator::CodeGen;
 use parser::Parser;
-use structopt::StructOpt;
 
 mod code_generator;
 mod parser;
-mod symbol_table;
 
 #[derive(StructOpt, Debug)]
 #[structopt(name = "hackasm")]
@@ -24,7 +23,7 @@ struct Opt {
 
   /// Files to process
   #[structopt(name = "FILE", parse(from_os_str))]
-  files: Vec<PathBuf>
+  files: Vec<PathBuf>,
 }
 
 fn main() {
@@ -33,22 +32,18 @@ fn main() {
     if let Some(f) = file.to_str() {
       let mut parser = Parser::new(f);
       match parser.parse_file() {
-        Ok((instructions, symbol_table)) => {
+        Ok(instructions) => {
           if opt.debug {
             for instruction in instructions {
               println!("{:?}", instruction);
             }
-            symbol_table.print_symbols();
           }
           let mut output_file = opt.output.clone();
           output_file.push(file.file_name().unwrap());
-          let output_filename = output_file.to_str().unwrap().replace(".asm", ".hack");
-          let code_gen = CodeGen::new(&output_filename, instructions, symbol_table);
-          match code_gen.generate(opt.debug) {
-            Ok(_) => println!("Compiled successfully to {}", output_filename),
-            Err(e) => eprintln!("ERROR: {}", e),
-          }
-        }
+          let output_filename = output_file.to_str().unwrap().replace(".vm", ".asm");
+          let code_gen = CodeGen::new(&output_filename, instructions);
+          code_gen.generate(opt.debug);
+        },
         Err(msg) => {
           eprintln!("ERROR: {:?}", msg);
         }

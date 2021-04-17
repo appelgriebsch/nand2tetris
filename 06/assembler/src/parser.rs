@@ -35,7 +35,10 @@ impl FromStr for Target {
 			"AM" => Ok(Target::AM),
 			"AD" => Ok(Target::AD),
 			"AMD" => Ok(Target::AMD),
-			_ => Err(())
+			_ => {
+				eprintln!("ERROR: Invalid token found {}", s);
+				Err(())
+			}
 		}
 	}
 }
@@ -104,7 +107,10 @@ impl FromStr for OpCode {
 			"D&M" => Ok(OpCode::DandM),
 			"D|A" => Ok(OpCode::DorA),
 			"D|M" => Ok(OpCode::DorM),
-			_ => Err(())
+			_ => {
+				eprintln!("ERROR: Invalid token found {}", s);
+				Err(())
+			}
 		}
 	}
 }
@@ -131,7 +137,10 @@ impl FromStr for JumpSpec {
 			"JNE" => Ok(JumpSpec::JNE),
 			"JLE" => Ok(JumpSpec::JLE),
 			"JMP" => Ok(JumpSpec::JMP),
-			_ => Err(())
+			_ => {
+				eprintln!("ERROR: Invalid token found {}", s);
+				Err(())
+			}
 		}
 	}
 }
