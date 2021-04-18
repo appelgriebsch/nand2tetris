@@ -16,26 +16,32 @@ impl <'a> CodeGen<'a> {
 	}
 	pub fn generate(&self, debug: bool) -> Result<(), io::Error> {
 		let mut file = File::create(self.output_file)?;
-		for instruction in self.instructions {
+		for (i, instruction) in self.instructions.iter().enumerate() {
 			let mut assembly = String::new();
 			assembly.push_str(&format!("//{}\n", instruction));
 			match instruction {
 				Instruction::Op(operation) => {
 					match operation {
-					    Operation::Add => {
+							// operations with two operands
+					    Operation::Add |
+					    Operation::Sub |
+					    Operation::Eq  |
+					    Operation::Gt  |
+					    Operation::Lt  |
+					    Operation::And |
+					    Operation::Or => {
 					    	assembly.push_str(&self.pop_from_stack());
 					    	assembly.push_str(&self.select_mem_indirect("@SP"));
-					    	assembly.push_str(&self.op_add());
+					    	assembly.push_str(&self.exec_operation(i, &operation));
+					    	assembly.push_str(&self.push_to_stack());
+					    },
+					    // operations with one operand only
+					    Operation::Neg | 
+					    Operation::Not => {
+					    	assembly.push_str(&self.select_mem_indirect("@SP"));
+					    	assembly.push_str(&self.exec_operation(i, &operation));
 					    	assembly.push_str(&self.push_to_stack());
 					    }
-					    Operation::Sub => {}
-					    Operation::Neg => {}
-					    Operation::Eq => {}
-					    Operation::Gt => {}
-					    Operation::Lt => {}
-					    Operation::And => {}
-					    Operation::Or => {}
-					    Operation::Not => {}
 					}
 				},
 				Instruction::Pop(segment, value) => {
@@ -55,7 +61,7 @@ impl <'a> CodeGen<'a> {
 				Instruction::Push(segment, value) => {
 					match segment {
 					    Segment::Constant => {
-					    	assembly.push_str(&self.load_value(*value));
+					    	assembly.push_str(&self.load_const_value(*value));
 					    	assembly.push_str(&self.push_to_stack());
 					    }
 					    Segment::Local => {}
@@ -76,7 +82,7 @@ impl <'a> CodeGen<'a> {
 		file.flush()
 	}
 
-	fn load_value(&self, value: u16) -> String {
+	fn load_const_value(&self, value: u16) -> String {
 		let mut assembly = String::new();
 		assembly.push_str(&format!("@{}\n", value));
 		assembly.push_str("D=A\n");
@@ -85,19 +91,15 @@ impl <'a> CodeGen<'a> {
 
 	fn push_to_stack(&self) -> String {
 		let mut assembly = String::new();
-		assembly.push_str("@SP\n");
-		assembly.push_str("A=M\n");
+		assembly.push_str(&self.select_mem_indirect("@SP"));
 		assembly.push_str("M=D\n");
-		assembly.push_str("@SP\n");
-		assembly.push_str("M=M+1\n");
+		assembly.push_str(&self.increase_pointer("@SP"));
 		assembly
 	}
 
 	fn pop_from_stack(&self) -> String {
 		let mut assembly = String::new();
-		assembly.push_str("@SP\n");
-		assembly.push_str("M=M-1\n");
-		assembly.push_str("A=M\n");
+		assembly.push_str(&self.decrease_pointer("@SP"));
 		assembly.push_str("D=M\n");
 		assembly
 	}
@@ -109,14 +111,65 @@ impl <'a> CodeGen<'a> {
 		assembly
 	}
 
-	fn op_add(&self) -> String {
+	fn exec_operation(&self, i: usize, op: &Operation) -> String {
 		let mut assembly = String::new();
-		assembly.push_str("@SP\n");
+		assembly.push_str(&self.decrease_pointer("@SP"));
+		match op {
+		    Operation::Add => { assembly.push_str("D=D+M\n"); }
+		    Operation::Sub => { assembly.push_str("D=M-D\n"); }
+		    Operation::Eq => { 
+		    	assembly.push_str("D=M-D\n"); 
+		    	assembly.push_str(&format!("@EQ_TRUE_{}\n", i));
+		    	assembly.push_str("D;JEQ\n");
+		    	assembly.push_str("D=0\n");
+		    	assembly.push_str(&format!("@EQ_END_{}\n", i));
+		    	assembly.push_str("0;JMP\n");
+		    	assembly.push_str(&format!("(EQ_TRUE_{})\n", i));
+		    	assembly.push_str("D=-1\n");
+		    	assembly.push_str(&format!("(EQ_END_{})\n", i));
+		    }
+		    Operation::Gt => { 
+		    	assembly.push_str("D=M-D\n"); 
+		    	assembly.push_str(&format!("@GT_TRUE_{}\n", i));
+		    	assembly.push_str("D;JGT\n");
+		    	assembly.push_str("D=0\n");
+		    	assembly.push_str(&format!("@GT_END_{}\n", i));
+		    	assembly.push_str("0;JMP\n");
+		    	assembly.push_str(&format!("(GT_TRUE_{})\n", i));
+		    	assembly.push_str("D=-1\n");
+		    	assembly.push_str(&format!("(GT_END_{})\n", i));
+		    }
+		    Operation::Lt => { 
+		    	assembly.push_str("D=M-D\n"); 
+		    	assembly.push_str(&format!("@LT_TRUE_{}\n", i));
+		    	assembly.push_str("D;JLT\n");
+		    	assembly.push_str("D=0\n");
+		    	assembly.push_str(&format!("@LT_END_{}\n", i));
+		    	assembly.push_str("0;JMP\n");
+		    	assembly.push_str(&format!("(LT_TRUE_{})\n", i));
+		    	assembly.push_str("D=-1\n");
+		    	assembly.push_str(&format!("(LT_END_{})\n", i));
+		    }
+		    Operation::And => { assembly.push_str("D=D&M\n"); }
+		    Operation::Or => { assembly.push_str("D=D|M\n"); }
+		    Operation::Neg => { assembly.push_str("D=-M\n"); }
+		    Operation::Not => { assembly.push_str("D=!M\n"); }
+		}
+		assembly
+	}
+
+	fn increase_pointer(&self, address: &str) -> String {
+		let mut assembly = String::new();
+		assembly.push_str(&format!("{}\n", address));
+		assembly.push_str("M=M+1\n");
+		assembly
+	}
+
+	fn decrease_pointer(&self, address: &str) -> String {
+		let mut assembly = String::new();
+		assembly.push_str(&format!("{}\n", address));
 		assembly.push_str("M=M-1\n");
 		assembly.push_str("A=M\n");
-		assembly.push_str("D=D+M\n");
-		assembly.push_str(&self.select_mem_indirect("@SP"));
-		assembly.push_str("M=M-1\n");
 		assembly
 	}
 }
