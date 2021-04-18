@@ -42,7 +42,10 @@ fn main() {
           output_file.push(file.file_name().unwrap());
           let output_filename = output_file.to_str().unwrap().replace(".vm", ".asm");
           let code_gen = CodeGen::new(&output_filename, instructions);
-          code_gen.generate(opt.debug);
+          match code_gen.generate(opt.debug) {
+            Ok(_) => println!("Compiled successfully to {}", output_filename),
+            Err(e) => eprintln!("ERROR: {}", e),
+          }
         },
         Err(msg) => {
           eprintln!("ERROR: {:?}", msg);
