@@ -1,3 +1,4 @@
+use std::fs;
 use std::path::PathBuf;
 use structopt::StructOpt;
 
@@ -17,39 +18,56 @@ struct Opt {
   #[structopt(short, long)]
   debug: bool,
 
-  /// Output directory
-  #[structopt(short, long, parse(from_os_str))]
-  output: PathBuf,
-
-  /// Files to process
+  /// File to process
   #[structopt(name = "FILE", parse(from_os_str))]
-  files: Vec<PathBuf>,
+  file: PathBuf,
 }
 
 fn main() {
   let opt = Opt::from_args();
-  for file in opt.files {
-    if let Some(f) = file.to_str() {
-      let mut parser = Parser::new(f);
-      match parser.parse_file() {
-        Ok(instructions) => {
-          if opt.debug {
-            for instruction in instructions {
-              println!("{:?}", instruction);
-            }
+  let mut files: Vec<String> = Vec::new();
+  let output_filename: String;
+  if opt.file.is_dir() {
+    let path = opt.file.clone();
+    let mut output_file = opt.file.clone();
+    output_file.push(format!("{}.asm", opt.file.file_stem().unwrap().to_str().unwrap()));
+    output_filename = output_file.to_str().unwrap().to_string();
+    if let Ok(entries) = fs::read_dir(opt.file) {
+      files = entries.map(|e| e.unwrap().file_name().into_string().unwrap())
+                     .filter(|name| name.ends_with(".vm"))
+                     .map(|file| {
+                        let mut infile = path.clone();
+                        infile.push(file);
+                        infile.to_str().unwrap().to_string()
+                     })
+                     .collect();
+    }
+  }
+  else {
+    files.push(opt.file.to_str().unwrap().to_owned());
+    output_filename = opt.file.clone().to_str().unwrap().replace(".vm", ".asm");
+  }
+  if opt.debug {
+    println!("{:?} -> {:?}", files.join(";"), output_filename);
+  }
+  let mut code_gen = CodeGen::new(&output_filename);
+  code_gen.init().expect("ERROR: Unable to write bootstrap code.");
+  for file in files {
+    let mut parser = Parser::new(&file);
+    match parser.parse_file() {
+      Ok(instructions) => {
+        if opt.debug {
+          for instruction in instructions {
+            println!("{:?}", instruction);
           }
-          let mut output_file = opt.output.clone();
-          output_file.push(file.file_name().unwrap());
-          let output_filename = output_file.to_str().unwrap().replace(".vm", ".asm");
-          let code_gen = CodeGen::new(&output_filename, instructions);
-          match code_gen.generate(opt.debug) {
-            Ok(_) => println!("Compiled successfully to {}", output_filename),
-            Err(e) => eprintln!("ERROR: {}", e),
-          }
-        },
-        Err(msg) => {
-          eprintln!("ERROR: {:?}", msg);
         }
+        match code_gen.generate(instructions, opt.debug) {
+          Ok(_) => println!("Compiled {} successfully into {}", file, output_filename),
+          Err(e) => eprintln!("ERROR: {}", e),
+        }
+      },
+      Err(msg) => {
+        eprintln!("ERROR: {:?}", msg);
       }
     }
   }
