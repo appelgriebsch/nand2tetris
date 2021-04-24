@@ -61,7 +61,9 @@ fn main() {
             println!("{:?}", instruction);
           }
         }
-        match code_gen.generate(instructions, opt.debug) {
+        let file_path = PathBuf::from(&file);
+        let file_name = file_path.file_stem().unwrap().to_str().unwrap();
+        match code_gen.generate(&file_name, instructions, opt.debug) {
           Ok(_) => println!("Compiled {} successfully into {}", file, output_filename),
           Err(e) => eprintln!("ERROR: {}", e),
         }

@@ -1,7 +1,6 @@
 use std::io;
 use std::io::Write;
-use std::{fs::File, path::PathBuf};
-
+use std::fs::File;
 use crate::parser::{Instruction, Operation, Segment};
 
 #[derive(Debug)]
@@ -23,11 +22,12 @@ impl<'a> CodeGen<'a> {
     }
     pub fn generate(
         &mut self,
+        file_name: &str,
         instructions: &Vec<Instruction>,
         debug: bool,
     ) -> Result<(), io::Error> {
-        let file_path = PathBuf::from(self.output_file);
-        let file_name = file_path.file_stem().unwrap().to_str().unwrap();
+        let mut current_function: String = String::new();
+        let mut current_fn_return: u16 = 0;
         for (i, instruction) in instructions.iter().enumerate() {
             let mut assembly = String::new();
             assembly.push_str(&format!("//{}\n", instruction));
@@ -163,20 +163,91 @@ impl<'a> CodeGen<'a> {
                     }
                 },
                 Instruction::Label(name) => {
-                    assembly.push_str(&format!("({})\n", name));
+                    assembly.push_str(&format!("({}.{}${})\n", file_name, current_function, name));
                 }
                 Instruction::Goto(label) => {
-                    assembly.push_str(&format!("@{}\n", label));
+                    assembly.push_str(&format!("@{}.{}${}\n", file_name, current_function, label));
                     assembly.push_str("0;JMP\n");
                 }
                 Instruction::IfGoto(label) => {
                     self.pop_from_stack(&mut assembly);
-                    assembly.push_str(&format!("@{}\n", label));
+                    assembly.push_str(&format!("@{}.{}${}\n", file_name, current_function, label));
                     assembly.push_str("D;JNE\n");
                 }
-                Instruction::DefFunc(name, no_of_locals) => {}
-                Instruction::CallFunc(name, no_of_args) => {}
-                Instruction::Return => {}
+                Instruction::DefFunc(name, no_of_locals) => {
+                    current_function = name.clone();
+                    current_fn_return = 0;
+                    assembly.push_str(&format!("({})\n", name));
+                    for _ in 0..*no_of_locals {
+                        self.load_const_value(0, &mut assembly);
+                        self.push_to_segment("@LCL", &mut assembly);
+                        self.increase_pointer("@LCL", &mut assembly);
+                    }
+                }
+                Instruction::CallFunc(name, no_of_args) => {
+                    let return_address = format!("{}.{}$ret.{}", file_name, current_function, current_fn_return);
+                    // push return address (see below) to stack
+                    assembly.push_str(&format!("@{}\n", return_address));
+                    assembly.push_str("D=A\n");
+                    self.push_to_stack(&mut assembly);
+                    // push LCL segment address to stack
+                    self.load_segment_address("@LCL", &mut assembly);
+                    self.push_to_stack(&mut assembly);
+                    // push ARG segment address to stack
+                    self.load_segment_address("@ARG", &mut assembly);
+                    self.push_to_stack(&mut assembly);
+                    // push THIS segment address to stack
+                    self.load_segment_address("@THIS", &mut assembly);
+                    self.push_to_stack(&mut assembly);
+                    // push THAT segment address to stack
+                    self.load_segment_address("@THAT", &mut assembly);
+                    self.push_to_stack(&mut assembly);
+                    // calculate ARG
+                    let jump_back_by = 5 + no_of_args;
+                    self.load_segment_address("@SP", &mut assembly);
+                    for _ in 0..jump_back_by {
+                        assembly.push_str("D=D-1\n");
+                    }
+                    assembly.push_str("@ARG\n");
+                    assembly.push_str("M=D\n");
+                    // calculate new LCL
+                    self.load_segment_address("@SP", &mut assembly);
+                    assembly.push_str("@LCL\n");
+                    assembly.push_str("M=D\n");
+                    // goto function
+                    assembly.push_str(&format!("@{}\n", name));
+                    assembly.push_str("0;JMP\n");
+                    assembly.push_str(&format!("({})\n", return_address));
+                    current_fn_return += 1;
+                }
+                Instruction::Return => {
+                    // store LCL address temporarily in R13
+                    self.load_segment_address("@LCL", &mut assembly);
+                    self.push_to_address("@R13", &mut assembly);
+                    // calculate return address and store it temporarily in R14
+                    self.load_segment_address("@R13", &mut assembly);
+                    for _ in 0..5 {
+                        assembly.push_str("D=D-1\n");
+                    }
+                    assembly.push_str("A=D\n");
+                    assembly.push_str("D=M\n");
+                    self.push_to_address("@R14", &mut assembly);
+                    // store return value in ARG
+                    self.pop_from_stack(&mut assembly);
+                    self.select_mem_indirect("@ARG", &mut assembly);
+                    assembly.push_str("M=D\n");
+                    self.load_segment_address("@ARG", &mut assembly);
+                    assembly.push_str("D=D+1\n");
+                    self.push_to_address("@SP", &mut assembly);
+                    // restore THAT segment pointer
+                    // restore THIS segment pointer
+                    // restore ARG segment pointer
+                    // restore LCL segment pointer
+                    // goto return address
+                    self.load_segment_address("@R14", &mut assembly);
+                    assembly.push_str("A=D\n");
+                    assembly.push_str("0;JMP\n");
+                }
             }
             if debug {
                 println!("{:?} -> {:?}", instruction, assembly);
@@ -208,6 +279,11 @@ impl<'a> CodeGen<'a> {
         assembly.push_str("A=M\n");
     }
 
+    fn load_segment_address(&self, address: &str, assembly: &mut String) {
+        assembly.push_str(&format!("{}\n", address));
+        assembly.push_str("D=M\n");
+    }
+
     fn select_segment_index(&self, base: &str, idx: u16, assembly: &mut String) {
         assembly.push_str(&format!("@{}\n", idx));
         assembly.push_str("D=A\n");
@@ -225,6 +301,11 @@ impl<'a> CodeGen<'a> {
     fn push_to_segment(&self, base: &str, assembly: &mut String) {
         assembly.push_str(&format!("{}\n", base));
         assembly.push_str("A=M\n");
+        assembly.push_str("M=D\n");
+    }
+
+    fn push_to_address(&self, base: &str, assembly: &mut String) {
+        assembly.push_str(&format!("{}\n", base));
         assembly.push_str("M=D\n");
     }
 
