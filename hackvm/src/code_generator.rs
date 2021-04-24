@@ -160,9 +160,18 @@ impl <'a> CodeGen<'a> {
               }
           }
         },
-        Instruction::Label(_) => {}
-        Instruction::Goto(_) => {}
-        Instruction::IfGoto(_) => {}
+        Instruction::Label(name) => {
+          assembly.push_str(&format!("({})\n", name));
+        }
+        Instruction::Goto(label) => {
+          assembly.push_str(&format!("@{}\n", label));
+          assembly.push_str("0;JMP\n");
+        }
+        Instruction::IfGoto(label) => {
+          assembly.push_str(&self.pop_from_stack());
+          assembly.push_str(&format!("@{}\n", label));
+          assembly.push_str("D;JNE\n");
+        }
         Instruction::DefFunc(_, _) => {}
         Instruction::CallFunc(_, _) => {}
         Instruction::Return => {}
