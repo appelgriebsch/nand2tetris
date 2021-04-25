@@ -26,7 +26,7 @@ impl<'a> CodeGen<'a> {
         self.push_to_address("@ARG", &mut assembly);
         self.push_to_address("@THIS", &mut assembly);
         self.push_to_address("@THAT", &mut assembly);
-        self.call_function("Sys.init", 0, 0, &mut assembly);
+        self.call_function("Sys.init", 0, "Bootstrap", 0, &mut assembly);
         self.file.write_fmt(format_args!("{}\n", assembly))
     }
     pub fn generate(
@@ -196,7 +196,7 @@ impl<'a> CodeGen<'a> {
                     }
                 }
                 Instruction::CallFunc(name, no_of_args) => {
-                    self.call_function(name, *no_of_args, current_fn_return, &mut assembly);
+                    self.call_function(name, *no_of_args, file_name, current_fn_return, &mut assembly);
                     current_fn_return += 1;
                 }
                 Instruction::Return => {
@@ -341,10 +341,11 @@ impl<'a> CodeGen<'a> {
         &self,
         name: &str,
         no_of_args: u16,
+        file_name: &str,
         return_counter: u16,
         assembly: &mut String,
     ) {
-        let return_address = format!("{}$ret.{}", name, return_counter);
+        let return_address = format!("{}.{}$ret.{}", file_name, name, return_counter);
         // push return address (see below) to stack
         assembly.push_str(&format!("@{}\n", return_address));
         assembly.push_str("D=A\n");

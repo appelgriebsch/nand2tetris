@@ -12,7 +12,7 @@ M=D
 M=D
 @THAT
 M=D
-@Sys.init$ret.0
+@Bootstrap.Sys.init$ret.0
 D=A
 @SP
 A=M
@@ -62,7 +62,7 @@ D=M
 M=D
 @Sys.init
 0;JMP
-(Sys.init$ret.0)
+(Bootstrap.Sys.init$ret.0)
 
 //function Main.fibonacci (0)
 (Main.fibonacci)
@@ -254,7 +254,7 @@ M=D
 M=M+1
 
 //call Main.fibonacci (1)
-@Main.fibonacci$ret.0
+@Main.Main.fibonacci$ret.0
 D=A
 @SP
 A=M
@@ -305,7 +305,7 @@ D=M
 M=D
 @Main.fibonacci
 0;JMP
-(Main.fibonacci$ret.0)
+(Main.Main.fibonacci$ret.0)
 
 //push argument 0
 @0
@@ -351,7 +351,7 @@ M=D
 M=M+1
 
 //call Main.fibonacci (1)
-@Main.fibonacci$ret.1
+@Main.Main.fibonacci$ret.1
 D=A
 @SP
 A=M
@@ -402,7 +402,7 @@ D=M
 M=D
 @Main.fibonacci
 0;JMP
-(Main.fibonacci$ret.1)
+(Main.Main.fibonacci$ret.1)
 
 //add
 @SP
@@ -491,7 +491,7 @@ M=D
 M=M+1
 
 //call Main.fibonacci (1)
-@Main.fibonacci$ret.0
+@Sys.Main.fibonacci$ret.0
 D=A
 @SP
 A=M
@@ -542,7 +542,7 @@ D=M
 M=D
 @Main.fibonacci
 0;JMP
-(Main.fibonacci$ret.0)
+(Sys.Main.fibonacci$ret.0)
 
 //label WHILE
 (Sys.init$WHILE)

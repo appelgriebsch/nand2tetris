@@ -12,7 +12,7 @@ M=D
 M=D
 @THAT
 M=D
-@Sys.init$ret.0
+@Bootstrap.Sys.init$ret.0
 D=A
 @SP
 A=M
@@ -62,7 +62,7 @@ D=M
 M=D
 @Sys.init
 0;JMP
-(Sys.init$ret.0)
+(Bootstrap.Sys.init$ret.0)
 
 //function Class2.set (0)
 (Class2.set)
@@ -300,7 +300,7 @@ M=D
 M=M+1
 
 //call Class1.set (2)
-@Class1.set$ret.0
+@Sys.Class1.set$ret.0
 D=A
 @SP
 A=M
@@ -352,7 +352,7 @@ D=M
 M=D
 @Class1.set
 0;JMP
-(Class1.set$ret.0)
+(Sys.Class1.set$ret.0)
 
 //pop temp 0
 @SP
@@ -381,7 +381,7 @@ M=D
 M=M+1
 
 //call Class2.set (2)
-@Class2.set$ret.1
+@Sys.Class2.set$ret.1
 D=A
 @SP
 A=M
@@ -433,7 +433,7 @@ D=M
 M=D
 @Class2.set
 0;JMP
-(Class2.set$ret.1)
+(Sys.Class2.set$ret.1)
 
 //pop temp 0
 @SP
@@ -444,7 +444,7 @@ D=M
 M=D
 
 //call Class1.get (0)
-@Class1.get$ret.2
+@Sys.Class1.get$ret.2
 D=A
 @SP
 A=M
@@ -494,10 +494,10 @@ D=M
 M=D
 @Class1.get
 0;JMP
-(Class1.get$ret.2)
+(Sys.Class1.get$ret.2)
 
 //call Class2.get (0)
-@Class2.get$ret.3
+@Sys.Class2.get$ret.3
 D=A
 @SP
 A=M
@@ -547,7 +547,7 @@ D=M
 M=D
 @Class2.get
 0;JMP
-(Class2.get$ret.3)
+(Sys.Class2.get$ret.3)
 
 //label WHILE
 (Sys.init$WHILE)
