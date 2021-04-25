@@ -27,7 +27,9 @@ fn main() {
   let opt = Opt::from_args();
   let mut files: Vec<String> = Vec::new();
   let output_filename: String;
+  let mut write_bootstrap_code: bool = false;
   if opt.file.is_dir() {
+    write_bootstrap_code = true;
     let path = opt.file.clone();
     let mut output_file = opt.file.clone();
     output_file.push(format!("{}.asm", opt.file.file_stem().unwrap().to_str().unwrap()));
@@ -51,7 +53,9 @@ fn main() {
     println!("{:?} -> {:?}", files.join(";"), output_filename);
   }
   let mut code_gen = CodeGen::new(&output_filename);
-  code_gen.init().expect("ERROR: Unable to write bootstrap code.");
+  if write_bootstrap_code {
+    code_gen.init().expect("ERROR: Unable to write bootstrap code.");
+  }
   for file in files {
     let mut parser = Parser::new(&file);
     match parser.parse_file() {

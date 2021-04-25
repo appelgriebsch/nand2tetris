@@ -1,7 +1,7 @@
+use crate::parser::{Instruction, Operation, Segment};
+use std::fs::File;
 use std::io;
 use std::io::Write;
-use std::fs::File;
-use crate::parser::{Instruction, Operation, Segment};
 
 #[derive(Debug)]
 pub(crate) struct CodeGen<'a> {
@@ -17,8 +17,17 @@ impl<'a> CodeGen<'a> {
             file: file,
         }
     }
-    pub fn init(&self) -> Result<(), io::Error> {
-        Ok(())
+    pub fn init(&mut self) -> Result<(), io::Error> {
+        let mut assembly = String::new();
+        self.load_const_value(256, &mut assembly);
+        self.push_to_address("@SP", &mut assembly);
+        self.load_const_value(0, &mut assembly);
+        self.push_to_address("@LCL", &mut assembly);
+        self.push_to_address("@ARG", &mut assembly);
+        self.push_to_address("@THIS", &mut assembly);
+        self.push_to_address("@THAT", &mut assembly);
+        self.call_function("Sys.init", 0, 0, &mut assembly);
+        self.file.write_fmt(format_args!("{}\n", assembly))
     }
     pub fn generate(
         &mut self,
@@ -26,7 +35,7 @@ impl<'a> CodeGen<'a> {
         instructions: &Vec<Instruction>,
         debug: bool,
     ) -> Result<(), io::Error> {
-        let mut current_function: String = String::new();
+        let mut current_function: String = file_name.clone().to_owned();
         let mut current_fn_return: u16 = 0;
         for (i, instruction) in instructions.iter().enumerate() {
             let mut assembly = String::new();
@@ -163,15 +172,15 @@ impl<'a> CodeGen<'a> {
                     }
                 },
                 Instruction::Label(name) => {
-                    assembly.push_str(&format!("({}.{}${})\n", file_name, current_function, name));
+                    assembly.push_str(&format!("({}${})\n", current_function, name));
                 }
                 Instruction::Goto(label) => {
-                    assembly.push_str(&format!("@{}.{}${}\n", file_name, current_function, label));
+                    assembly.push_str(&format!("@{}${}\n", current_function, label));
                     assembly.push_str("0;JMP\n");
                 }
                 Instruction::IfGoto(label) => {
                     self.pop_from_stack(&mut assembly);
-                    assembly.push_str(&format!("@{}.{}${}\n", file_name, current_function, label));
+                    assembly.push_str(&format!("@{}${}\n", current_function, label));
                     assembly.push_str("D;JNE\n");
                 }
                 Instruction::DefFunc(name, no_of_locals) => {
@@ -183,71 +192,15 @@ impl<'a> CodeGen<'a> {
                         self.load_const_value(0, &mut assembly);
                         self.push_to_segment("@LCL", &mut assembly);
                         self.deselect_segment_index("@LCL", i, &mut assembly);
+                        self.increase_pointer("@SP", &mut assembly);
                     }
                 }
                 Instruction::CallFunc(name, no_of_args) => {
-                    let return_address = format!("{}.{}$ret.{}", file_name, current_function, current_fn_return);
-                    // push return address (see below) to stack
-                    assembly.push_str(&format!("@{}\n", return_address));
-                    assembly.push_str("D=A\n");
-                    self.push_to_stack(&mut assembly);
-                    // push LCL segment address to stack
-                    self.load_segment_address("@LCL", &mut assembly);
-                    self.push_to_stack(&mut assembly);
-                    // push ARG segment address to stack
-                    self.load_segment_address("@ARG", &mut assembly);
-                    self.push_to_stack(&mut assembly);
-                    // push THIS segment address to stack
-                    self.load_segment_address("@THIS", &mut assembly);
-                    self.push_to_stack(&mut assembly);
-                    // push THAT segment address to stack
-                    self.load_segment_address("@THAT", &mut assembly);
-                    self.push_to_stack(&mut assembly);
-                    // calculate ARG
-                    let jump_back_by = 5 + no_of_args;
-                    self.load_segment_address("@SP", &mut assembly);
-                    for _ in 0..jump_back_by {
-                        assembly.push_str("D=D-1\n");
-                    }
-                    assembly.push_str("@ARG\n");
-                    assembly.push_str("M=D\n");
-                    // calculate new LCL
-                    self.load_segment_address("@SP", &mut assembly);
-                    assembly.push_str("@LCL\n");
-                    assembly.push_str("M=D\n");
-                    // goto function
-                    assembly.push_str(&format!("@{}\n", name));
-                    assembly.push_str("0;JMP\n");
-                    assembly.push_str(&format!("({})\n", return_address));
+                    self.call_function(name, *no_of_args, current_fn_return, &mut assembly);
                     current_fn_return += 1;
                 }
                 Instruction::Return => {
-                    // store LCL address temporarily in R13
-                    self.load_segment_address("@LCL", &mut assembly);
-                    self.push_to_address("@R13", &mut assembly);
-                    // store return value in ARG
-                    self.pop_from_stack(&mut assembly);
-                    self.select_mem_indirect("@ARG", &mut assembly);
-                    assembly.push_str("M=D\n");
-                    self.load_segment_address("@ARG", &mut assembly);
-                    assembly.push_str("D=D+1\n");
-                    self.push_to_address("@SP", &mut assembly);
-                    // restore THAT segment pointer
-                    self.pop_from_address("@R13", &mut assembly);
-                    self.push_to_address("@THAT", &mut assembly);
-                    // restore THIS segment pointer
-                    self.pop_from_address("@R13", &mut assembly);
-                    self.push_to_address("@THIS", &mut assembly);
-                    // restore ARG segment pointer
-                    self.pop_from_address("@R13", &mut assembly);
-                    self.push_to_address("@ARG", &mut assembly);
-                    // restore LCL segment pointer
-                    self.pop_from_address("@R13", &mut assembly);
-                    self.push_to_address("@LCL", &mut assembly);
-                    // restore return address and goto
-                    self.pop_from_address("@R13", &mut assembly);
-                    assembly.push_str("A=D\n");
-                    assembly.push_str("0;JMP\n");
+                    self.return_function(&mut assembly);
                 }
             }
             if debug {
@@ -382,5 +335,84 @@ impl<'a> CodeGen<'a> {
     fn decrease_pointer(&self, address: &str, assembly: &mut String) {
         assembly.push_str(&format!("{}\n", address));
         assembly.push_str("M=M-1\n");
+    }
+
+    fn call_function(
+        &self,
+        name: &str,
+        no_of_args: u16,
+        return_counter: u16,
+        assembly: &mut String,
+    ) {
+        let return_address = format!("{}$ret.{}", name, return_counter);
+        // push return address (see below) to stack
+        assembly.push_str(&format!("@{}\n", return_address));
+        assembly.push_str("D=A\n");
+        self.push_to_stack(assembly);
+        // push LCL segment address to stack
+        self.load_segment_address("@LCL", assembly);
+        self.push_to_stack(assembly);
+        // push ARG segment address to stack
+        self.load_segment_address("@ARG", assembly);
+        self.push_to_stack(assembly);
+        // push THIS segment address to stack
+        self.load_segment_address("@THIS", assembly);
+        self.push_to_stack(assembly);
+        // push THAT segment address to stack
+        self.load_segment_address("@THAT", assembly);
+        self.push_to_stack(assembly);
+        // calculate ARG
+        let jump_back_by = 5 + no_of_args;
+        self.load_segment_address("@SP", assembly);
+        for _ in 0..jump_back_by {
+            assembly.push_str("D=D-1\n");
+        }
+        assembly.push_str("@ARG\n");
+        assembly.push_str("M=D\n");
+        // calculate new LCL
+        self.load_segment_address("@SP", assembly);
+        assembly.push_str("@LCL\n");
+        assembly.push_str("M=D\n");
+        // goto function
+        assembly.push_str(&format!("@{}\n", name));
+        assembly.push_str("0;JMP\n");
+        assembly.push_str(&format!("({})\n", return_address));
+    }
+
+    fn return_function(&self, assembly: &mut String) {
+        // store LCL address temporarily in R13
+        self.load_segment_address("@LCL", assembly);
+        self.push_to_address("@R13", assembly);
+        // store return address temporarily in R14
+        self.load_segment_address("@LCL", assembly);
+        for _ in 0..5 {
+            assembly.push_str("D=D-1\n");
+        }
+        assembly.push_str("A=D\n");
+        assembly.push_str("D=M\n");
+        self.push_to_address("@R14", assembly);
+        // store return value in ARG
+        self.pop_from_stack(assembly);
+        self.select_mem_indirect("@ARG", assembly);
+        assembly.push_str("M=D\n");
+        self.load_segment_address("@ARG", assembly);
+        assembly.push_str("D=D+1\n");
+        self.push_to_address("@SP", assembly);
+        // restore THAT segment pointer
+        self.pop_from_address("@R13", assembly);
+        self.push_to_address("@THAT", assembly);
+        // restore THIS segment pointer
+        self.pop_from_address("@R13", assembly);
+        self.push_to_address("@THIS", assembly);
+        // restore ARG segment pointer
+        self.pop_from_address("@R13", assembly);
+        self.push_to_address("@ARG", assembly);
+        // restore LCL segment pointer
+        self.pop_from_address("@R13", assembly);
+        self.push_to_address("@LCL", assembly);
+        // restore return address and goto
+        self.load_segment_address("@R14", assembly);
+        assembly.push_str("A=D\n");
+        assembly.push_str("0;JMP\n");
     }
 }

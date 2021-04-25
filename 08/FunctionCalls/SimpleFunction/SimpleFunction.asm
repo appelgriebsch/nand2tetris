@@ -13,6 +13,8 @@ M=D
 D=A
 @LCL
 M=M-D
+@SP
+M=M+1
 @1
 D=A
 @LCL
@@ -26,6 +28,8 @@ M=D
 D=A
 @LCL
 M=M-D
+@SP
+M=M+1
 
 //push local 0
 @0
