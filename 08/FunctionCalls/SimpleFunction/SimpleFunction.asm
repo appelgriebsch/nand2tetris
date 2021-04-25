@@ -1,21 +1,11 @@
-//push constant 0
-@0
-D=A
-@SP
-A=M
-M=D
-@SP
-M=M+1
-
-//pop local 0
+//function SimpleFunction.test (2)
+(SimpleFunction.test)
 @0
 D=A
 @LCL
 M=M+D
-@SP
-M=M-1
-A=M
-D=M
+@0
+D=A
 @LCL
 A=M
 M=D
@@ -23,25 +13,18 @@ M=D
 D=A
 @LCL
 M=M-D
-
-//label LOOP_START
-(BasicLoop.$LOOP_START)
-
-//push argument 0
+@1
+D=A
+@LCL
+M=M+D
 @0
 D=A
-@ARG
-M=M+D
-A=M
-D=M
-@SP
+@LCL
 A=M
 M=D
-@SP
-M=M+1
-@0
+@1
 D=A
-@ARG
+@LCL
 M=M-D
 
 //push local 0
@@ -57,6 +40,23 @@ M=D
 @SP
 M=M+1
 @0
+D=A
+@LCL
+M=M-D
+
+//push local 1
+@1
+D=A
+@LCL
+M=M+D
+A=M
+D=M
+@SP
+A=M
+M=D
+@SP
+M=M+1
+@1
 D=A
 @LCL
 M=M-D
@@ -78,22 +78,18 @@ M=D
 @SP
 M=M+1
 
-//pop local 0
-@0
-D=A
-@LCL
-M=M+D
+//not
+@SP
+A=M
 @SP
 M=M-1
 A=M
-D=M
-@LCL
+D=!M
+@SP
 A=M
 M=D
-@0
-D=A
-@LCL
-M=M-D
+@SP
+M=M+1
 
 //push argument 0
 @0
@@ -112,14 +108,39 @@ D=A
 @ARG
 M=M-D
 
-//push constant 1
-@1
-D=A
+//add
+@SP
+M=M-1
+A=M
+D=M
+@SP
+A=M
+@SP
+M=M-1
+A=M
+D=D+M
 @SP
 A=M
 M=D
 @SP
 M=M+1
+
+//push argument 1
+@1
+D=A
+@ARG
+M=M+D
+A=M
+D=M
+@SP
+A=M
+M=D
+@SP
+M=M+1
+@1
+D=A
+@ARG
+M=M-D
 
 //sub
 @SP
@@ -138,11 +159,11 @@ M=D
 @SP
 M=M+1
 
-//pop argument 0
-@0
-D=A
-@ARG
-M=M+D
+//return
+@LCL
+D=M
+@R13
+M=D
 @SP
 M=M-1
 A=M
@@ -150,50 +171,39 @@ D=M
 @ARG
 A=M
 M=D
-@0
-D=A
 @ARG
-M=M-D
-
-//push argument 0
-@0
-D=A
-@ARG
-M=M+D
-A=M
 D=M
+D=D+1
 @SP
-A=M
 M=D
-@SP
-M=M+1
-@0
-D=A
-@ARG
-M=M-D
-
-//if-goto LOOP_START
-@SP
+@R13
 M=M-1
 A=M
 D=M
-@BasicLoop.$LOOP_START
-D;JNE
-
-//push local 0
-@0
-D=A
-@LCL
-M=M+D
+@THAT
+M=D
+@R13
+M=M-1
 A=M
 D=M
-@SP
-A=M
+@THIS
 M=D
-@SP
-M=M+1
-@0
-D=A
+@R13
+M=M-1
+A=M
+D=M
+@ARG
+M=D
+@R13
+M=M-1
+A=M
+D=M
 @LCL
-M=M-D
+M=D
+@R13
+M=M-1
+A=M
+D=M
+A=D
+0;JMP
 
