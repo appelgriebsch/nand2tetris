@@ -1,4 +1,5 @@
 /** represents a simple floating number class by using fixed-point encoding */
+// based on: https://stackoverflow.com/questions/10067510/fixed-point-arithmetic-in-c-programming
 class SimpleFloat {
 	field int number;
 
@@ -39,8 +40,15 @@ class SimpleFloat {
 		return SimpleFloat.new(result);
 	}
 
+	/** multiplies an integer value to a simple float returning the result */
+	function SimpleFloat mulInt(SimpleFloat sf, int multiplier) {
+		var int result;
+		let result = Math.multiply(sf.getValue(), multiplier);
+		return SimpleFloat.new(result);
+	}
+
 	/** divides an integer value from a simple float, returing the result */
-	function SimpleFloat div(SimpleFloat sf, int divisor) {
+	function SimpleFloat divInt(SimpleFloat sf, int divisor) {
 		var int result;
 		let result = Math.divide(sf.getValue(), divisor);
 		return SimpleFloat.new(result);
@@ -51,7 +59,7 @@ class SimpleFloat {
 		var int result, i;
 		let i = 0;
 		let result = val;
-		while (i < 4) {
+		while (i < 8) {
 			let result = Math.multiply(result, 2);
 			let i = i + 1;
 		}
@@ -63,7 +71,7 @@ class SimpleFloat {
 		var int result, i;
 		let i = 0;
 		let result = sf.getValue();
-		while (i < 4) {
+		while (i < 8) {
 			let result = Math.divide(result, 2);
 			let i = i + 1;
 		}

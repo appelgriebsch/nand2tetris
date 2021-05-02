@@ -1,3 +1,5 @@
+/** Mandelbrot Fractal */
+// based on http://www.righto.com/2017/06/one-hour-mandelbrot-creating-fractal-on.html
 class Main {
 	function void main() {
 		var Mandelbrot fractal;

@@ -1,4 +1,5 @@
 /** represents a Mandelbrot set */
+// based on: http://www.righto.com/2017/06/one-hour-mandelbrot-creating-fractal-on.html
 class Mandelbrot {
 	field int width;						// screen width
 	field int height;						// screen height
@@ -30,9 +31,9 @@ class Mandelbrot {
 
 	/** paints the mandelbrot set to the screen */
 	method void paint() {
-		var int currX, currY;															// running counter for screen rows and columns
-		var SimpleFloat xStep, yStep, nextX, nextY, x, y;	// step size on rows and columns, next values for complex c
-		var int abs;
+		var int currX, currY;													// running counter for screen rows and columns
+		var int iterations;														// holds the number of iterations for the current calculation
+		var SimpleFloat xStep, yStep, cX, cY, x, y;		// step size on rows and columns, next values for complex c
 		
 		// initialize global counters
 		let currY = 0;
@@ -46,7 +47,7 @@ class Mandelbrot {
 			// starts a new iteration
 			let y = SimpleFloat.encode(currY);
 			// with:  y0 + yStep * y		
-			let nextY = calc_nextY(yStep, y);
+			let cY = calc_cY(yStep, y);
 			// resetting the running column counter per row
 			let currX = 0;
 			// iterates over the columns
@@ -54,21 +55,21 @@ class Mandelbrot {
 				// start an new iteration
 				let x = SimpleFloat.encode(currX);
 				// with: x0 + xStep * x
-				let nextX = calc_nextX(xStep, x);
+				let cX = calc_cX(xStep, x);
 				// calculating the current mandelbrot set in a loop
 				// returning the abs of the point in space
-				let abs = Mandelbrot.calculate(nextX, nextY, maxIter);
+				let iterations = Mandelbrot.calculate(cX, cY, maxIter);
 				// only paint if within the boundary of the mandelbrot set
-				if (abs < 2) {
+				if (~(iterations < maxIter)) {
 					do Screen.setColor(true);
 					do Screen.drawPixel(currX, currY);
 				}
-				do nextX.dispose();
+				do cX.dispose();
 				do x.dispose();
 				// next column	
 				let currX = currX +	1;
 			}
-			do nextY.dispose();
+			do cY.dispose();
 			do y.dispose();
 			// next row
 			let currY = currY + 1;
@@ -80,32 +81,64 @@ class Mandelbrot {
 	}
 
 	/** runs a mandelbrot set calculation for max iterations and returns the abs of the point in the mandelbrot set */
-	function int calculate(SimpleFloat nextX, SimpleFloat nextY, int maxIter) {
-		var int result;
+	function int calculate(SimpleFloat cX, SimpleFloat cY, int maxIter) {
 		var int currIter;							// running counter for Mandelbrot set iterations
 		var boolean exitLoop;					// flag denoting if internal loop should be exited (simulates a break stmt.)
-		var Complex c, z, tmp;
+		var SimpleFloat x, y, x2, y2, xy2, tmp1, tmp2;
 		
-		// initialize z: 		0 , 0
-		let z = Complex.fromInt(0, 0);
-		// initialize c
-		let c = Complex.new(nextX, nextY);
+		// initialize x and y to 0
+		let x = SimpleFloat.encode(0);
+		let y = SimpleFloat.encode(0);
+
+		// initialize x2 = x² and y2 = y²
+		let x2 = x.mul(x);
+		let y2 = y.mul(y);
+
 		// initialize loop counters
-		let result = 0;
 		let currIter = 0;
 		let exitLoop = false;
 
+		// calculate x² + y²; if > 4 it will likely be out of the set
+		let xy2 = x2.add(y2);
+		// if not in the mandelbrot set break out of loop
+		if (SimpleFloat.decode(xy2) > 4) {
+			let exitLoop = true;
+		}
+		do xy2.dispose();
+			
 		while (~(exitLoop)) {
-			// calculate mandelbrot set z = z² + c					
-			let tmp = Mandelbrot.mandelbrotSet(z, c);
-			do z.dispose();
-			let z = tmp;
-			// calculate abs of z; if > 2 it will likely be out of the set
-			let result = z.abs();
+			// calculate y = 2 * x * y + cY
+			let tmp1 = x.mul(y);
+			let tmp2 = SimpleFloat.mulInt(tmp1, 2);
+			do tmp1.dispose();
+			do y.dispose();
+			let y = tmp2.add(cY);
+
+			// calculate x = x2 - y2 + cX
+			let tmp1 = x2.sub(y2);
+			do x.dispose();
+			let x = tmp1.add(cX);
+			do tmp1.dispose();
+			do tmp2.dispose();
+
+			// calculate new x2 and y2
+			let tmp1 = x.mul(x);
+			do x2.dispose();
+			let x2 = tmp1;
+
+			let tmp2 = y.mul(y);
+			do y2.dispose();
+			let y2 = tmp2;
+
+			// calculate x² + y²; if > 4 it will likely be out of the set
+			let xy2 = x2.add(y2);
 			// if not in the mandelbrot set break out of loop
-			if (result > 2) {
+			if (SimpleFloat.decode(xy2) > 4) {
 				let exitLoop = true;
 			}
+			do xy2.dispose();
+			do tmp1.dispose();
+			do tmp2.dispose();
 			// loop counter for inner loop
 			let currIter = currIter + 1;
 			// if larger than maxIter break out of loop
@@ -113,26 +146,19 @@ class Mandelbrot {
 				let exitLoop = true;
 			}
 		}
-		// clean up z and c
-		do z.dispose();
-		do c.dispose();
-		return result;
-	}
-
-	/** calculates the mandelbrot set based on z = z² + c */
-	function Complex mandelbrotSet(Complex z, Complex c) {
-		var Complex tmp, result;
-		let tmp = z.mul(z);
-		let result = tmp.add(c);
-		do tmp.dispose();
-		return result;
+		// cleanup
+		do x.dispose();
+		do y.dispose();
+		do x2.dispose();
+		do y2.dispose();
+		return currIter;
 	}
 
 	/** calculates the xStep based on xStep = (x1 - x0) / width */
 	method SimpleFloat calc_xStep() {
 		var SimpleFloat result, tmp;
 		let tmp = x1.sub(x0);
-		let result = SimpleFloat.div(tmp, width);
+		let result = SimpleFloat.divInt(tmp, width);
 		do tmp.dispose();
 		return result;
 	}
@@ -141,13 +167,13 @@ class Mandelbrot {
 	method SimpleFloat calc_yStep() {
 		var SimpleFloat result, tmp;
 		let tmp = y1.sub(y0);
-		let result = SimpleFloat.div(tmp, height);
+		let result = SimpleFloat.divInt(tmp, height);
 		do tmp.dispose();
 		return result;
 	}
 
-	/** calculates the next X value based on nextX = x0 + xStep * x */
-	method SimpleFloat calc_nextX(SimpleFloat xStep, SimpleFloat x) {
+	/** calculates the next cX value based on cX = x0 + xStep * x */
+	method SimpleFloat calc_cX(SimpleFloat xStep, SimpleFloat x) {
 		var SimpleFloat result, tmp;
 		let tmp = xStep.mul(x);
 		let result = x0.add(tmp);
@@ -155,8 +181,8 @@ class Mandelbrot {
 		return result;
 	}
 
-	/** calculates the next Y value based on nextY = y0 + yStep * y */
-	method SimpleFloat calc_nextY(SimpleFloat yStep, SimpleFloat y) {
+	/** calculates the next cY value based on cY = y0 + yStep * y */
+	method SimpleFloat calc_cY(SimpleFloat yStep, SimpleFloat y) {
 		var SimpleFloat result, tmp;
 		let tmp = yStep.mul(y);
 		let result = y0.add(tmp);
