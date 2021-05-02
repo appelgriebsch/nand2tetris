@@ -1,0 +1,161 @@
+/** represents a Mandelbrot set */
+class Mandelbrot {
+	field int width;						// screen width
+	field int height;						// screen height
+	field SimpleFloat x0, x1;		// init values for min-x, max-x
+	field SimpleFloat y0, y1; 	// init values for min-y, max-y
+	field int maxIter;					// init value for max no. of iterations
+
+	/** constructs a new Mandelbrot set within the space minX/minY - maxX/maxY. uses iters iterations for calculation */
+	constructor Mandelbrot new(SimpleFloat minX, SimpleFloat maxX, SimpleFloat minY, SimpleFloat maxY, int iters) {
+		let width = 512;
+		let height = 256;
+		let x0 = minX;
+		let y0 = minY;
+		let x1 = maxX;
+		let y1 = maxY;
+		let maxIter = iters;
+		return this;
+	}
+
+	/** Disposes this class. */
+	method void dispose() {
+		do x0.dispose();
+		do y0.dispose();
+		do x1.dispose();
+		do y1.dispose();
+	  do Memory.deAlloc(this);  // uses an OS routine to recycle the memory held by the object
+	  return;
+	}
+
+	/** paints the mandelbrot set to the screen */
+	method void paint() {
+		var int currX, currY;					// running counter for screen rows and columns
+		var int currIter;							// running counter for Mandelbrot set iterations
+		var boolean exitLoop;					// flag denoting if internal loop should be exited (simulates a break stmt.)
+		var SimpleFloat xStep, yStep, nextX, nextY;	// step size on rows and columns, next values for complex c
+		var Complex c, z, tmp;				// complex space calculation: z = z² + c
+		var int currAbs;
+		
+		// initialize global counters
+		let currY = 0;
+		
+		// calculate step size in x direction
+		let xStep = calc_xStep();
+
+		// calculate step size in y direction
+		let yStep = calc_yStep();
+
+		// iterates over the rows
+		while (currY < height) {
+			// resetting the running column counter per row
+			let currX = 0;
+
+			// iterates over the columns
+			while (currX < width) {			
+				// initialize loop counters
+				let currIter = 0;
+				let exitLoop = false;
+
+				// initialize z: 		0 , 0
+				let z = Complex.from(0, 0);
+
+				// initialize c
+				// with: x0 + xStep * x
+				// and:  y0 + yStep * y		
+				let nextX = calc_nextX(xStep, currX);
+				let nextY = calc_nextY(yStep, currY);
+				let c = Complex.new(nextX, nextY);
+
+				while (~(exitLoop)) {
+					// calculate mandelbrot set z = z² + c					
+					let z = Mandelbrot.mandelbrotSet(z, c);
+
+					// calculate abs of z; if > 2 it will likely be out of the set
+					let currAbs = z.abs();
+					
+					// if not in the mandelbrot set break out of loop
+					if (currAbs > 2) {
+						let exitLoop = true;
+					}
+
+					// loop counter for inner loop
+					let currIter = currIter + 1;
+					// if larger than maxIter break out of loop
+					if (currIter > maxIter) {
+							let exitLoop = true;
+					}
+				}
+
+				// only paint if within the boundary of the mandelbrot set
+				if (currAbs < 2) {
+					do Screen.setColor(true);
+					do Screen.drawPixel(currX, currY);
+				}
+
+				// cleanup current iteration values
+				do z.dispose();
+				do c.dispose();
+			
+				// next column	
+				let currX = currX +	1;
+			}
+			// next row
+			let currY = currY + 1;
+		}
+
+		// cleanup step counters
+		do xStep.dispose();
+		do yStep.dispose();
+		return;
+	}
+
+	/** calculates the mandelbrot set based on z = z² + c */
+	function Complex mandelbrotSet(Complex z, Complex c) {
+		var Complex tmp, result;
+		let tmp = z.mul(z);
+		let result = tmp.add(c);
+		do tmp.dispose();
+		return result;
+	}
+
+	/** calculates the xStep based on xStep = (x1 - x0) / width */
+	method SimpleFloat calc_xStep() {
+		var SimpleFloat result, tmp;
+		let tmp = x1.sub(x0);
+		let result = SimpleFloat.div(tmp, width);
+		do tmp.dispose();
+		return result;
+	}
+
+	/** calculates the yStep based on yStep = (y1 - y0) / height */
+	method SimpleFloat calc_yStep() {
+		var SimpleFloat result, tmp;
+		let tmp = y1.sub(y0);
+		let result = SimpleFloat.div(tmp, height);
+		do tmp.dispose();
+		return result;
+	}
+
+	/** calculates the next X value based on nextX = x0 + xStep * x */
+	method SimpleFloat calc_nextX(SimpleFloat xStep, int currX) {
+		var SimpleFloat result, tmp1, tmp2;
+		let tmp1 = SimpleFloat.encode(currX);
+		let tmp2 = xStep.mul(tmp1);
+		let result = x0.add(tmp2);
+		do tmp1.dispose();
+		do tmp2.dispose();
+		return result;
+	}
+
+	/** calculates the next Y value based on nextY = y0 + yStep * y */
+	method SimpleFloat calc_nextY(SimpleFloat yStep, int currY) {
+		var SimpleFloat result, tmp1, tmp2;
+		let tmp1 = SimpleFloat.encode(currY);
+		let tmp2 = yStep.mul(tmp1);
+		let result = y0.add(tmp2);
+		do tmp1.dispose();
+		do tmp2.dispose();
+		return result;
+	}
+}

@@ -1,0 +1,24 @@
+class Main {
+	function void main() {
+		var Mandelbrot fractal;
+		var SimpleFloat x0, x1, y0, y1;
+		var int iterations;
+
+		// setup
+		let x0 = SimpleFloat.encode(-2);
+		let x1 = SimpleFloat.encode(1);
+		let y0 = SimpleFloat.encode(-1);
+		let y1 = SimpleFloat.encode(1);
+		let iterations = 100;
+
+		let fractal = Mandelbrot.new(x0, x1, y0, y1, iterations);
+
+		// paint
+		do Screen.clearScreen();
+		do fractal.paint();
+
+		// cleanup	
+		do fractal.dispose();
+		return;
+	}
+}

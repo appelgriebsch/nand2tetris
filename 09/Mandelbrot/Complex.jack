@@ -1,0 +1,80 @@
+/** represents a complex number re + im */
+class Complex {
+	field SimpleFloat re;
+	field SimpleFloat im;
+
+	/** constructs a new complex number with the given r and i */
+	constructor Complex new(SimpleFloat r, SimpleFloat i) {
+		let re = r;
+		let im = i;
+		return this;
+	}
+	
+	/** Disposes this class. */
+	method void dispose() {
+		do re.dispose();
+		do im.dispose();
+	  do Memory.deAlloc(this);  // uses an OS routine to recycle the memory held by the object
+	  return;
+	}
+
+	/** returns the real part of this complex number */
+	method SimpleFloat getRe() { return re; }
+	/** returns the imaginary part of this complex number */
+	method SimpleFloat getIm() { return im; }
+
+	/** adds two complex numbers returning the result */
+	method Complex add(Complex rhs) {
+		var SimpleFloat newRe, newIm;
+		let newRe = re.add(rhs.getRe());
+		let newIm = im.add(rhs.getIm());
+		return Complex.new(newRe, newIm);
+	}
+
+	/** multiplies two complex numbers returning the result */
+	method Complex mul(Complex rhs) {
+		var SimpleFloat newRe, newIm, tmp1, tmp2, tmp3, tmp4;
+
+		let tmp1 = re.mul(rhs.getRe());
+		let tmp2 = im.mul(rhs.getIm());
+		let newRe = tmp1.sub(tmp2);
+
+		let tmp3 = re.mul(rhs.getIm());
+		let tmp4 = im.mul(rhs.getRe());
+		let newIm = tmp1.add(tmp2);
+		
+		do tmp1.dispose();
+		do tmp2.dispose();
+		do tmp3.dispose();
+		do tmp4.dispose();
+
+		return Complex.new(newRe, newIm);
+	}
+
+	/** calculates the abs of this complex number */
+	method int abs() {
+		var int result;
+		var SimpleFloat re2, im2, tmp;
+
+		// re2 = re * re		
+		let re2 = re.mul(re);
+		// im2 = im * im
+		let im2 = im.mul(im);
+
+		// result = re2 + im2
+		let tmp = re2.add(im2);
+		let result = SimpleFloat.decode(tmp);
+
+		do tmp.dispose();
+		
+		return Math.sqrt(result);
+	}
+
+	/** initializes a new complex number from the given int values */
+	function Complex from(int re, int im) {
+		var SimpleFloat r, i;
+		let r = SimpleFloat.encode(re);
+		let i = SimpleFloat.encode(im);
+		return Complex.new(r, i);
+	}
+}

@@ -1,0 +1,72 @@
+/** represents a simple floating number class by using fixed-point encoding */
+class SimpleFloat {
+	field int number;
+
+	/** constructs a new simple float number with an encoded(!!) value */
+	/** you should use the SimpleFloat.encode() operation for natural integers */
+	constructor SimpleFloat new(int value) {
+		let number = value;
+		return this;
+	}
+
+	/** Disposes this class. */
+	method void dispose() {
+	  do Memory.deAlloc(this);  // uses an OS routine to recycle the memory held by the object
+	  return;
+	}
+
+	/** returns the encoded(!!) value held by this instance */
+	method int getValue() { return number;	}
+
+	/** adds two simple float values, returing the result */
+	method SimpleFloat add(SimpleFloat rhs) {
+		var int result;
+		let result = number + rhs.getValue();
+		return SimpleFloat.new(result);
+	}
+
+	/** subs two simple float values, returing the result */
+	method SimpleFloat sub(SimpleFloat rhs) {
+		var int result;
+		let result = number - rhs.getValue();
+		return SimpleFloat.new(result);
+	}
+
+	/** multiplies two simple float values, returing the result */
+	method SimpleFloat mul(SimpleFloat rhs) {
+		var int result;
+		let result = Math.multiply(number, SimpleFloat.decode(rhs));
+		return SimpleFloat.new(result);
+	}
+
+	/** divides an integer value from a simple float, returing the result */
+	function SimpleFloat div(SimpleFloat sf, int divisor) {
+		var int result;
+		let result = Math.divide(sf.getValue(), divisor);
+		return SimpleFloat.new(result);
+	}
+
+	/** encodes an integer into a simple float by left-shifting it */
+	function SimpleFloat encode(int val) {
+		var int result, i;
+		let i = 0;
+		let result = val;
+		while (i < 4) {
+			let result = Math.multiply(result, 2);
+			let i = i + 1;
+		}
+		return SimpleFloat.new(result);
+	}
+
+	/** dencodes an simple float value into an integer by right-shifting it */
+	function int decode(SimpleFloat sf) {
+		var int result, i;
+		let i = 0;
+		let result = sf.getValue();
+		while (i < 4) {
+			let result = Math.divide(result, 2);
+			let i = i + 1;
+		}
+		return result;
+	}
+}
