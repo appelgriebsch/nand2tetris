@@ -34,7 +34,6 @@ class Complex {
 	/** multiplies two complex numbers returning the result */
 	method Complex mul(Complex rhs) {
 		var SimpleFloat newRe, newIm, tmp1, tmp2, tmp3, tmp4;
-
 		let tmp1 = re.mul(rhs.getRe());
 		let tmp2 = im.mul(rhs.getIm());
 		let newRe = tmp1.sub(tmp2);
@@ -42,12 +41,11 @@ class Complex {
 		let tmp3 = re.mul(rhs.getIm());
 		let tmp4 = im.mul(rhs.getRe());
 		let newIm = tmp1.add(tmp2);
-		
+	
 		do tmp1.dispose();
 		do tmp2.dispose();
 		do tmp3.dispose();
 		do tmp4.dispose();
-
 		return Complex.new(newRe, newIm);
 	}
 
@@ -55,18 +53,14 @@ class Complex {
 	method int abs() {
 		var int result;
 		var SimpleFloat re2, im2, tmp;
-
 		// re2 = re * re		
 		let re2 = re.mul(re);
 		// im2 = im * im
 		let im2 = im.mul(im);
-
 		// result = re2 + im2
 		let tmp = re2.add(im2);
 		let result = SimpleFloat.decode(tmp);
-
 		do tmp.dispose();
-		
 		return Math.sqrt(result);
 	}
 

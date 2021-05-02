@@ -30,54 +30,49 @@ class Mandelbrot {
 
 	/** paints the mandelbrot set to the screen */
 	method void paint() {
-		var int currX, currY;												// running counter for screen rows and columns
-		var SimpleFloat xStep, yStep, nextX, nextY;	// step size on rows and columns, next values for complex c
-		var Complex c, z;														// complex space calculation: z = z² + c
+		var int currX, currY;															// running counter for screen rows and columns
+		var SimpleFloat xStep, yStep, nextX, nextY, x, y;	// step size on rows and columns, next values for complex c
 		var int abs;
 		
 		// initialize global counters
 		let currY = 0;
-		
 		// calculate step size in x direction
 		let xStep = calc_xStep();
-
 		// calculate step size in y direction
 		let yStep = calc_yStep();
 
 		// iterates over the rows
 		while (currY < height) {
+			// starts a new iteration
+			let y = SimpleFloat.encode(currY);
+			// with:  y0 + yStep * y		
+			let nextY = calc_nextY(yStep, y);
 			// resetting the running column counter per row
 			let currX = 0;
-
 			// iterates over the columns
 			while (currX < width) {			
-				// initialize c
+				// start an new iteration
+				let x = SimpleFloat.encode(currX);
 				// with: x0 + xStep * x
-				// and:  y0 + yStep * y		
-				let nextX = calc_nextX(xStep, currX);
-				let nextY = calc_nextY(yStep, currY);
-				let c = Complex.new(nextX, nextY);
-
+				let nextX = calc_nextX(xStep, x);
 				// calculating the current mandelbrot set in a loop
 				// returning the abs of the point in space
-				let abs = Mandelbrot.calculate(c, maxIter);
-
+				let abs = Mandelbrot.calculate(nextX, nextY, maxIter);
 				// only paint if within the boundary of the mandelbrot set
 				if (abs < 2) {
 					do Screen.setColor(true);
 					do Screen.drawPixel(currX, currY);
 				}
-
-				// cleanup current iteration value
-				do c.dispose();
-			
+				do nextX.dispose();
+				do x.dispose();
 				// next column	
 				let currX = currX +	1;
 			}
+			do nextY.dispose();
+			do y.dispose();
 			// next row
 			let currY = currY + 1;
 		}
-
 		// cleanup step counters
 		do xStep.dispose();
 		do yStep.dispose();
@@ -85,14 +80,17 @@ class Mandelbrot {
 	}
 
 	/** runs a mandelbrot set calculation for max iterations and returns the abs of the point in the mandelbrot set */
-	function int calculate(Complex c, int maxIter) {
+	function int calculate(SimpleFloat nextX, SimpleFloat nextY, int maxIter) {
 		var int result;
 		var int currIter;							// running counter for Mandelbrot set iterations
 		var boolean exitLoop;					// flag denoting if internal loop should be exited (simulates a break stmt.)
-		var Complex z, tmp;
-
+		var Complex c, z, tmp;
+		
 		// initialize z: 		0 , 0
 		let z = Complex.fromInt(0, 0);
+		// initialize c
+		let c = Complex.new(nextX, nextY);
+		// initialize loop counters
 		let result = 0;
 		let currIter = 0;
 		let exitLoop = false;
@@ -115,8 +113,9 @@ class Mandelbrot {
 				let exitLoop = true;
 			}
 		}
-		// clean up z
+		// clean up z and c
 		do z.dispose();
+		do c.dispose();
 		return result;
 	}
 
@@ -148,24 +147,20 @@ class Mandelbrot {
 	}
 
 	/** calculates the next X value based on nextX = x0 + xStep * x */
-	method SimpleFloat calc_nextX(SimpleFloat xStep, int currX) {
-		var SimpleFloat result, tmp1, tmp2;
-		let tmp1 = SimpleFloat.encode(currX);
-		let tmp2 = xStep.mul(tmp1);
-		let result = x0.add(tmp2);
-		do tmp1.dispose();
-		do tmp2.dispose();
+	method SimpleFloat calc_nextX(SimpleFloat xStep, SimpleFloat x) {
+		var SimpleFloat result, tmp;
+		let tmp = xStep.mul(x);
+		let result = x0.add(tmp);
+		do tmp.dispose();
 		return result;
 	}
 
 	/** calculates the next Y value based on nextY = y0 + yStep * y */
-	method SimpleFloat calc_nextY(SimpleFloat yStep, int currY) {
-		var SimpleFloat result, tmp1, tmp2;
-		let tmp1 = SimpleFloat.encode(currY);
-		let tmp2 = yStep.mul(tmp1);
-		let result = y0.add(tmp2);
-		do tmp1.dispose();
-		do tmp2.dispose();
+	method SimpleFloat calc_nextY(SimpleFloat yStep, SimpleFloat y) {
+		var SimpleFloat result, tmp;
+		let tmp = yStep.mul(y);
+		let result = y0.add(tmp);
+		do tmp.dispose();
 		return result;
 	}
 }
