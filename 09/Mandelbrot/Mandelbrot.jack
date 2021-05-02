@@ -30,12 +30,10 @@ class Mandelbrot {
 
 	/** paints the mandelbrot set to the screen */
 	method void paint() {
-		var int currX, currY;					// running counter for screen rows and columns
-		var int currIter;							// running counter for Mandelbrot set iterations
-		var boolean exitLoop;					// flag denoting if internal loop should be exited (simulates a break stmt.)
+		var int currX, currY;												// running counter for screen rows and columns
 		var SimpleFloat xStep, yStep, nextX, nextY;	// step size on rows and columns, next values for complex c
-		var Complex c, z, tmp;				// complex space calculation: z = z² + c
-		var int currAbs;
+		var Complex c, z;														// complex space calculation: z = z² + c
+		var int abs;
 		
 		// initialize global counters
 		let currY = 0;
@@ -53,13 +51,6 @@ class Mandelbrot {
 
 			// iterates over the columns
 			while (currX < width) {			
-				// initialize loop counters
-				let currIter = 0;
-				let exitLoop = false;
-
-				// initialize z: 		0 , 0
-				let z = Complex.from(0, 0);
-
 				// initialize c
 				// with: x0 + xStep * x
 				// and:  y0 + yStep * y		
@@ -67,34 +58,17 @@ class Mandelbrot {
 				let nextY = calc_nextY(yStep, currY);
 				let c = Complex.new(nextX, nextY);
 
-				while (~(exitLoop)) {
-					// calculate mandelbrot set z = z² + c					
-					let z = Mandelbrot.mandelbrotSet(z, c);
-
-					// calculate abs of z; if > 2 it will likely be out of the set
-					let currAbs = z.abs();
-					
-					// if not in the mandelbrot set break out of loop
-					if (currAbs > 2) {
-						let exitLoop = true;
-					}
-
-					// loop counter for inner loop
-					let currIter = currIter + 1;
-					// if larger than maxIter break out of loop
-					if (currIter > maxIter) {
-							let exitLoop = true;
-					}
-				}
+				// calculating the current mandelbrot set in a loop
+				// returning the abs of the point in space
+				let abs = Mandelbrot.calculate(c, maxIter);
 
 				// only paint if within the boundary of the mandelbrot set
-				if (currAbs < 2) {
+				if (abs < 2) {
 					do Screen.setColor(true);
 					do Screen.drawPixel(currX, currY);
 				}
 
-				// cleanup current iteration values
-				do z.dispose();
+				// cleanup current iteration value
 				do c.dispose();
 			
 				// next column	
@@ -108,6 +82,42 @@ class Mandelbrot {
 		do xStep.dispose();
 		do yStep.dispose();
 		return;
+	}
+
+	/** runs a mandelbrot set calculation for max iterations and returns the abs of the point in the mandelbrot set */
+	function int calculate(Complex c, int maxIter) {
+		var int result;
+		var int currIter;							// running counter for Mandelbrot set iterations
+		var boolean exitLoop;					// flag denoting if internal loop should be exited (simulates a break stmt.)
+		var Complex z, tmp;
+
+		// initialize z: 		0 , 0
+		let z = Complex.fromInt(0, 0);
+		let result = 0;
+		let currIter = 0;
+		let exitLoop = false;
+
+		while (~(exitLoop)) {
+			// calculate mandelbrot set z = z² + c					
+			let tmp = Mandelbrot.mandelbrotSet(z, c);
+			do z.dispose();
+			let z = tmp;
+			// calculate abs of z; if > 2 it will likely be out of the set
+			let result = z.abs();
+			// if not in the mandelbrot set break out of loop
+			if (result > 2) {
+				let exitLoop = true;
+			}
+			// loop counter for inner loop
+			let currIter = currIter + 1;
+			// if larger than maxIter break out of loop
+			if (currIter > maxIter) {
+				let exitLoop = true;
+			}
+		}
+		// clean up z
+		do z.dispose();
+		return result;
 	}
 
 	/** calculates the mandelbrot set based on z = z² + c */

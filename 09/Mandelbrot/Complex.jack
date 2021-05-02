@@ -71,7 +71,7 @@ class Complex {
 	}
 
 	/** initializes a new complex number from the given int values */
-	function Complex from(int re, int im) {
+	function Complex fromInt(int re, int im) {
 		var SimpleFloat r, i;
 		let r = SimpleFloat.encode(re);
 		let i = SimpleFloat.encode(im);
