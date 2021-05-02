@@ -1,0 +1,34 @@
+function Main.main 6
+push constant 2
+neg
+call SimpleFloat.encode 1
+pop local 1
+push constant 1
+call SimpleFloat.encode 1
+pop local 2
+push constant 1
+neg
+call SimpleFloat.encode 1
+pop local 3
+push constant 1
+call SimpleFloat.encode 1
+pop local 4
+push constant 100
+pop local 5
+push local 1
+push local 2
+push local 3
+push local 4
+push local 5
+call Mandelbrot.new 5
+pop local 0
+call Screen.clearScreen 0
+pop temp 0
+push local 0
+call Mandelbrot.paint 1
+pop temp 0
+push local 0
+call Mandelbrot.dispose 1
+pop temp 0
+push constant 0
+return

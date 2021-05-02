@@ -1,0 +1,347 @@
+function Mandelbrot.new 0
+push constant 7
+call Memory.alloc 1
+pop pointer 0
+push constant 512
+pop this 0
+push constant 256
+pop this 1
+push argument 0
+pop this 2
+push argument 2
+pop this 4
+push argument 1
+pop this 3
+push argument 3
+pop this 5
+push argument 4
+pop this 6
+push pointer 0
+return
+function Mandelbrot.dispose 0
+push argument 0
+pop pointer 0
+push this 2
+call SimpleFloat.dispose 1
+pop temp 0
+push this 4
+call SimpleFloat.dispose 1
+pop temp 0
+push this 3
+call SimpleFloat.dispose 1
+pop temp 0
+push this 5
+call SimpleFloat.dispose 1
+pop temp 0
+push pointer 0
+call Memory.deAlloc 1
+pop temp 0
+push constant 0
+return
+function Mandelbrot.paint 9
+push argument 0
+pop pointer 0
+push constant 0
+pop local 1
+push pointer 0
+call Mandelbrot.calc_xStep 1
+pop local 3
+push pointer 0
+call Mandelbrot.calc_yStep 1
+pop local 4
+label WHILE_EXP0
+push local 1
+push this 1
+lt
+not
+if-goto WHILE_END0
+push local 1
+call SimpleFloat.encode 1
+pop local 8
+push pointer 0
+push local 4
+push local 8
+call Mandelbrot.calc_cY 3
+pop local 6
+push constant 0
+pop local 0
+label WHILE_EXP1
+push local 0
+push this 0
+lt
+not
+if-goto WHILE_END1
+push local 0
+call SimpleFloat.encode 1
+pop local 7
+push pointer 0
+push local 3
+push local 7
+call Mandelbrot.calc_cX 3
+pop local 5
+push local 5
+push local 6
+push this 6
+call Mandelbrot.calculate 3
+pop local 2
+push local 2
+push this 6
+lt
+not
+if-goto IF_TRUE0
+goto IF_FALSE0
+label IF_TRUE0
+push constant 0
+not
+call Screen.setColor 1
+pop temp 0
+push local 0
+push local 1
+call Screen.drawPixel 2
+pop temp 0
+label IF_FALSE0
+push local 5
+call SimpleFloat.dispose 1
+pop temp 0
+push local 7
+call SimpleFloat.dispose 1
+pop temp 0
+push local 0
+push constant 1
+add
+pop local 0
+goto WHILE_EXP1
+label WHILE_END1
+push local 6
+call SimpleFloat.dispose 1
+pop temp 0
+push local 8
+call SimpleFloat.dispose 1
+pop temp 0
+push local 1
+push constant 1
+add
+pop local 1
+goto WHILE_EXP0
+label WHILE_END0
+push local 3
+call SimpleFloat.dispose 1
+pop temp 0
+push local 4
+call SimpleFloat.dispose 1
+pop temp 0
+push constant 0
+return
+function Mandelbrot.calculate 9
+push constant 0
+call SimpleFloat.encode 1
+pop local 2
+push constant 0
+call SimpleFloat.encode 1
+pop local 3
+push local 2
+push local 2
+call SimpleFloat.mul 2
+pop local 4
+push local 3
+push local 3
+call SimpleFloat.mul 2
+pop local 5
+push constant 0
+pop local 0
+push constant 0
+pop local 1
+push local 4
+push local 5
+call SimpleFloat.add 2
+pop local 6
+push local 6
+call SimpleFloat.decode 1
+push constant 4
+gt
+if-goto IF_TRUE0
+goto IF_FALSE0
+label IF_TRUE0
+push constant 0
+not
+pop local 1
+label IF_FALSE0
+push local 6
+call SimpleFloat.dispose 1
+pop temp 0
+label WHILE_EXP0
+push local 1
+not
+not
+if-goto WHILE_END0
+push local 2
+push local 3
+call SimpleFloat.mul 2
+pop local 7
+push local 7
+push constant 2
+call SimpleFloat.mulInt 2
+pop local 8
+push local 7
+call SimpleFloat.dispose 1
+pop temp 0
+push local 3
+call SimpleFloat.dispose 1
+pop temp 0
+push local 8
+push argument 1
+call SimpleFloat.add 2
+pop local 3
+push local 4
+push local 5
+call SimpleFloat.sub 2
+pop local 7
+push local 2
+call SimpleFloat.dispose 1
+pop temp 0
+push local 7
+push argument 0
+call SimpleFloat.add 2
+pop local 2
+push local 7
+call SimpleFloat.dispose 1
+pop temp 0
+push local 8
+call SimpleFloat.dispose 1
+pop temp 0
+push local 2
+push local 2
+call SimpleFloat.mul 2
+pop local 7
+push local 4
+call SimpleFloat.dispose 1
+pop temp 0
+push local 7
+pop local 4
+push local 3
+push local 3
+call SimpleFloat.mul 2
+pop local 8
+push local 5
+call SimpleFloat.dispose 1
+pop temp 0
+push local 8
+pop local 5
+push local 4
+push local 5
+call SimpleFloat.add 2
+pop local 6
+push local 6
+call SimpleFloat.decode 1
+push constant 4
+gt
+if-goto IF_TRUE1
+goto IF_FALSE1
+label IF_TRUE1
+push constant 0
+not
+pop local 1
+label IF_FALSE1
+push local 6
+call SimpleFloat.dispose 1
+pop temp 0
+push local 7
+call SimpleFloat.dispose 1
+pop temp 0
+push local 8
+call SimpleFloat.dispose 1
+pop temp 0
+push local 0
+push constant 1
+add
+pop local 0
+push local 0
+push argument 2
+gt
+if-goto IF_TRUE2
+goto IF_FALSE2
+label IF_TRUE2
+push constant 0
+not
+pop local 1
+label IF_FALSE2
+goto WHILE_EXP0
+label WHILE_END0
+push local 2
+call SimpleFloat.dispose 1
+pop temp 0
+push local 3
+call SimpleFloat.dispose 1
+pop temp 0
+push local 4
+call SimpleFloat.dispose 1
+pop temp 0
+push local 5
+call SimpleFloat.dispose 1
+pop temp 0
+push local 0
+return
+function Mandelbrot.calc_xStep 2
+push argument 0
+pop pointer 0
+push this 3
+push this 2
+call SimpleFloat.sub 2
+pop local 1
+push local 1
+push this 0
+call SimpleFloat.divInt 2
+pop local 0
+push local 1
+call SimpleFloat.dispose 1
+pop temp 0
+push local 0
+return
+function Mandelbrot.calc_yStep 2
+push argument 0
+pop pointer 0
+push this 5
+push this 4
+call SimpleFloat.sub 2
+pop local 1
+push local 1
+push this 1
+call SimpleFloat.divInt 2
+pop local 0
+push local 1
+call SimpleFloat.dispose 1
+pop temp 0
+push local 0
+return
+function Mandelbrot.calc_cX 2
+push argument 0
+pop pointer 0
+push argument 1
+push argument 2
+call SimpleFloat.mul 2
+pop local 1
+push this 2
+push local 1
+call SimpleFloat.add 2
+pop local 0
+push local 1
+call SimpleFloat.dispose 1
+pop temp 0
+push local 0
+return
+function Mandelbrot.calc_cY 2
+push argument 0
+pop pointer 0
+push argument 1
+push argument 2
+call SimpleFloat.mul 2
+pop local 1
+push this 4
+push local 1
+call SimpleFloat.add 2
+pop local 0
+push local 1
+call SimpleFloat.dispose 1
+pop temp 0
+push local 0
+return
