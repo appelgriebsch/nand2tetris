@@ -33,7 +33,7 @@ class Mandelbrot {
 	method void paint() {
 		var int currX, currY;													// running counter for screen rows and columns
 		var int iterations;														// holds the number of iterations for the current calculation
-		var SimpleFloat xStep, yStep, cX, cY, x, y;		// step size on rows and columns, next values for complex c
+		var SimpleFloat xStep, yStep, cX, cY;		// step size on rows and columns, next values for complex c
 		
 		// initialize global counters
 		let currY = 0;
@@ -45,17 +45,15 @@ class Mandelbrot {
 		// iterates over the rows
 		while (currY < height) {
 			// starts a new iteration
-			let y = SimpleFloat.encode(currY);
 			// with:  y0 + yStep * y		
-			let cY = calc_cY(yStep, y);
+			let cY = calc_cY(yStep, currY);
 			// resetting the running column counter per row
 			let currX = 0;
 			// iterates over the columns
 			while (currX < width) {			
 				// start an new iteration
-				let x = SimpleFloat.encode(currX);
 				// with: x0 + xStep * x
-				let cX = calc_cX(xStep, x);
+				let cX = calc_cX(xStep, currX);
 				// calculating the current mandelbrot set in a loop
 				// returning the abs of the point in space
 				let iterations = Mandelbrot.calculate(cX, cY, maxIter);
@@ -65,12 +63,10 @@ class Mandelbrot {
 					do Screen.drawPixel(currX, currY);
 				}
 				do cX.dispose();
-				do x.dispose();
 				// next column	
 				let currX = currX +	1;
 			}
 			do cY.dispose();
-			do y.dispose();
 			// next row
 			let currY = currY + 1;
 		}
@@ -101,7 +97,7 @@ class Mandelbrot {
 		// calculate x² + y²; if > 4 it will likely be out of the set
 		let xy2 = x2.add(y2);
 		// if not in the mandelbrot set break out of loop
-		if (SimpleFloat.decode(xy2) > 4) {
+		if (~(SimpleFloat.decode(xy2) < 4)) {
 			let exitLoop = true;
 		}
 		do xy2.dispose();
@@ -133,7 +129,7 @@ class Mandelbrot {
 			// calculate x² + y²; if > 4 it will likely be out of the set
 			let xy2 = x2.add(y2);
 			// if not in the mandelbrot set break out of loop
-			if (SimpleFloat.decode(xy2) > 4) {
+			if (~(SimpleFloat.decode(xy2) < 4)) {
 				let exitLoop = true;
 			}
 			do xy2.dispose();
@@ -173,18 +169,18 @@ class Mandelbrot {
 	}
 
 	/** calculates the next cX value based on cX = x0 + xStep * x */
-	method SimpleFloat calc_cX(SimpleFloat xStep, SimpleFloat x) {
+	method SimpleFloat calc_cX(SimpleFloat xStep, int x) {
 		var SimpleFloat result, tmp;
-		let tmp = xStep.mul(x);
+		let tmp = SimpleFloat.mulInt(xStep, x);
 		let result = x0.add(tmp);
 		do tmp.dispose();
 		return result;
 	}
 
 	/** calculates the next cY value based on cY = y0 + yStep * y */
-	method SimpleFloat calc_cY(SimpleFloat yStep, SimpleFloat y) {
+	method SimpleFloat calc_cY(SimpleFloat yStep, int y) {
 		var SimpleFloat result, tmp;
-		let tmp = yStep.mul(y);
+		let tmp = SimpleFloat.mulInt(yStep, y);
 		let result = y0.add(tmp);
 		do tmp.dispose();
 		return result;
