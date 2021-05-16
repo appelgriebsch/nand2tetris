@@ -9,7 +9,7 @@ mod code_generator;
 mod parser;
 
 #[derive(StructOpt, Debug)]
-#[structopt(name = "hackasm")]
+#[structopt(name = "hackvm")]
 struct Opt {
   // A flag, true if used in the command line. Note doc comment will
   // be used for the help message of the flag. The name of the

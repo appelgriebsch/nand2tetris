@@ -7,10 +7,10 @@ class Main {
 		var int iterations;
 
 		// setup
-		let x0 = SimpleFloat.encode(-2);
-		let x1 = SimpleFloat.encode(1);
-		let y0 = SimpleFloat.encode(-1);
-		let y1 = SimpleFloat.encode(1);
+		let x0 = -2;
+		let x1 = 1;
+		let y0 = -1;
+		let y1 = 1;
 		let iterations = 100;
 
 		let fractal = Mandelbrot.new(x0, x1, y0, y1, iterations);

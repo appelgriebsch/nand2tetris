@@ -8,14 +8,14 @@ class Mandelbrot {
 	field int maxIter;					// init value for max no. of iterations
 
 	/** constructs a new Mandelbrot set within the space minX/minY - maxX/maxY. uses iters iterations for calculation */
-	constructor Mandelbrot new(SimpleFloat minX, SimpleFloat maxX, SimpleFloat minY, SimpleFloat maxY, int iters) {
+	constructor Mandelbrot new(int minX, int maxX, int minY, int maxY, int iters) {
+		let x0 = SimpleFloat.encode(minX);
+		let y0 = SimpleFloat.encode(minY);
+		let x1 = SimpleFloat.encode(maxX);
+		let y1 = SimpleFloat.encode(maxY);
+		let maxIter = iters;
 		let width = 512;
 		let height = 256;
-		let x0 = minX;
-		let y0 = minY;
-		let x1 = maxX;
-		let y1 = maxY;
-		let maxIter = iters;
 		return this;
 	}
 
@@ -80,24 +80,26 @@ class Mandelbrot {
 	function int calculate(SimpleFloat cX, SimpleFloat cY, int maxIter) {
 		var int currIter;							// running counter for Mandelbrot set iterations
 		var boolean exitLoop;					// flag denoting if internal loop should be exited (simulates a break stmt.)
-		var SimpleFloat x, y, x2, y2, xy2, tmp1, tmp2;
+		var SimpleFloat x, y, x2, y2, xy2, tmp1, tmp2, boundary;
 		
 		// initialize x and y to 0
 		let x = SimpleFloat.encode(0);
 		let y = SimpleFloat.encode(0);
 
+		// initialize loop counters
+		let currIter = 0;
+		let exitLoop = false;
+		let boundary = SimpleFloat.encode(4);
+
 		// initialize x2 = x² and y2 = y²
 		let x2 = x.mul(x);
 		let y2 = y.mul(y);
 
-		// initialize loop counters
-		let currIter = 0;
-		let exitLoop = false;
-
 		// calculate x² + y²; if > 4 it will likely be out of the set
 		let xy2 = x2.add(y2);
+
 		// if not in the mandelbrot set break out of loop
-		if (~(SimpleFloat.decode(xy2) < 4)) {
+		if (~(xy2.getValue() < boundary.getValue())) {
 			let exitLoop = true;
 		}
 		do xy2.dispose();
@@ -129,24 +131,30 @@ class Mandelbrot {
 			// calculate x² + y²; if > 4 it will likely be out of the set
 			let xy2 = x2.add(y2);
 			// if not in the mandelbrot set break out of loop
-			if (~(SimpleFloat.decode(xy2) < 4)) {
+			if (~(xy2.getValue() < boundary.getValue())) {
 				let exitLoop = true;
+			}
+			else {
+				// loop counter for inner loop
+				let currIter = currIter + 1;
+				// if larger than maxIter break out of loop
+				if (currIter > maxIter) {
+					let exitLoop = true;
+					do Output.moveCursor(0,0);
+					do Output.printString("ITER: ");
+					do Output.printInt(currIter);
+				}
 			}
 			do xy2.dispose();
 			do tmp1.dispose();
 			do tmp2.dispose();
-			// loop counter for inner loop
-			let currIter = currIter + 1;
-			// if larger than maxIter break out of loop
-			if (currIter > maxIter) {
-				let exitLoop = true;
-			}
 		}
 		// cleanup
 		do x.dispose();
 		do y.dispose();
 		do x2.dispose();
 		do y2.dispose();
+		do boundary.dispose();
 		return currIter;
 	}
 
